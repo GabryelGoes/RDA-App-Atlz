@@ -1,26 +1,26 @@
+import { WorkshopData, Vehicle, Stage } from '../types.ts';
 
-import { WorkshopData, Vehicle, Stage } from './types.ts';
+const getEnv = (key: string): string => {
+  return (import.meta as any).env?.[key] || '';
+};
 
-const API_KEY = (import.meta as any).env?.VITE_TRELLO_API_KEY || '';
-const TOKEN = (import.meta as any).env?.VITE_TRELLO_TOKEN || '';
-const BOARD_ID = (import.meta as any).env?.VITE_TRELLO_BOARD_ID || '';
+const API_KEY = getEnv('VITE_TRELLO_API_KEY');
+const TOKEN = getEnv('VITE_TRELLO_TOKEN');
+const BOARD_ID = getEnv('VITE_TRELLO_BOARD_ID');
 
 export const fetchWorkshopData = async (): Promise<WorkshopData> => {
   if (!API_KEY || !TOKEN || !BOARD_ID) {
-    console.error("Variáveis de ambiente VITE_TRELLO_... não configuradas.");
-    return { boardName: "Erro: Configuração Ausente", vehicles: [] };
+    console.warn("Trello API Key, Token or Board ID not found.");
+    return { boardName: "Configurar Variáveis no Vercel", vehicles: [] };
   }
 
   try {
-    const [listsRes, cardsRes] = await Promise.all([
-      fetch(`https://api.trello.com/1/boards/${BOARD_ID}/lists?key=${API_KEY}&token=${TOKEN}`),
-      // Importante: &members=true traz os usuários atribuídos ao card
-      fetch(`https://api.trello.com/1/boards/${BOARD_ID}/cards?key=${API_KEY}&token=${TOKEN}&members=true`)
-    ]);
-
-    if (!listsRes.ok || !cardsRes.ok) throw new Error("Erro ao acessar API do Trello");
-
+    const listsRes = await fetch(`https://api.trello.com/1/boards/${BOARD_ID}/lists?key=${API_KEY}&token=${TOKEN}`);
+    if (!listsRes.ok) throw new Error("Trello List fetch failed");
     const lists = await listsRes.json();
+
+    const cardsRes = await fetch(`https://api.trello.com/1/boards/${BOARD_ID}/cards?key=${API_KEY}&token=${TOKEN}`);
+    if (!cardsRes.ok) throw new Error("Trello Card fetch failed");
     const cards = await cardsRes.json();
 
     const listMap = lists.reduce((acc: any, list: any) => {
@@ -29,17 +29,16 @@ export const fetchWorkshopData = async (): Promise<WorkshopData> => {
     }, {});
 
     const vehicles: Vehicle[] = cards.map((card: any) => {
-      const nameParts = card.name.split('-').map((p: string) => p.trim());
+      const parts = card.name.split('-').map((p: string) => p.trim());
       
       return {
         id: card.id,
-        model: nameParts[0] || 'Veículo',
-        plate: nameParts[1] || '---',
-        client: nameParts[2] || 'Cliente',
+        model: parts[0] || 'Veículo',
+        plate: parts[1] || '---',
+        client: parts[2] || 'Cliente',
         stage: (listMap[card.idList] || 'Aguardando Avaliação') as Stage,
-        deliveryDate: card.due ? new Date(card.due).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '---',
-        // Pega o nome do PRIMEIRO membro do card. Se não houver, exibe "Pátio"
-        mechanic: card.members?.[0]?.fullName || 'Pátio',
+        deliveryDate: card.due ? new Date(card.due).toLocaleDateString('pt-BR') : 'Sem data',
+        mechanic: card.labels?.[0]?.name || 'TBD',
         lastActivity: new Date(card.dateLastActivity).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
       };
     });
@@ -49,7 +48,7 @@ export const fetchWorkshopData = async (): Promise<WorkshopData> => {
       vehicles
     };
   } catch (error) {
-    console.error("Trello Integration Error:", error);
+    console.error("Integration error:", error);
     return { boardName: "Erro de Conexão", vehicles: [] };
   }
 };
