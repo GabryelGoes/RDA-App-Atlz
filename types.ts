@@ -1,8 +1,11 @@
+
 export type Stage = 
   | 'Aguardando Avaliação' 
   | 'Em Avaliação' 
+  | 'Avaliação Técnica'
   | 'Aguardando Aprovação' 
   | 'Aprovado' 
+  | 'Orçamento Aprovado'
   | 'Em Serviço' 
   | 'Aguardando Peças' 
   | 'Fase de Teste' 
