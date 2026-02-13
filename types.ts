@@ -1,4 +1,3 @@
-
 export type Stage = 
   | 'Aguardando Avaliação' 
   | 'Em Avaliação' 
@@ -18,6 +17,7 @@ export interface Vehicle {
   client: string;
   stage: Stage;
   deliveryDate: string;
+  rawDueDate?: Date; // Data original para cálculos
   mechanic: string;
   lastActivity: string;
 }
