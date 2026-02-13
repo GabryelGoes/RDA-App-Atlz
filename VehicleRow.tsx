@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Vehicle, Stage } from './types.ts';
+import { Vehicle, Stage } from '../types.ts';
 
 interface VehicleRowProps {
   vehicle: Vehicle;
@@ -22,22 +22,25 @@ const getStageColors = (stage: Stage) => {
 
 const VehicleRow: React.FC<VehicleRowProps> = ({ vehicle }) => {
   const colorClass = getStageColors(vehicle.stage);
-  const displayStage = vehicle.stage.toLowerCase().includes('não aprovado') ? 'Reprovado' : vehicle.stage;
   
-  const formatMechanicName = (name: string) => {
-    if (!name || name === 'Pátio' || name === 'TBD') return name;
-    const parts = name.split(' ');
-    if (parts.length > 1) return `${parts[0]} ${parts[1][0]}.`; 
-    return name;
+  const getDisplayStage = (stage: string) => {
+    if (stage.toLowerCase().includes('não aprovado')) return 'Nao Aprovado';
+    return stage;
   };
 
-  const modelDisplay = vehicle.model.replace('Land Rover', '').trim();
+  const getModelOnly = (fullModel: string) => {
+    return fullModel.replace('Land Rover', '').trim();
+  };
+
+  const modelOnly = getModelOnly(vehicle.model);
+  const displayStage = getDisplayStage(vehicle.stage);
+  const firstName = vehicle.mechanic.split(' ')[0];
 
   return (
-    <div className={`flex items-center w-full h-full rounded-[24px] border px-8 transition-all duration-700 shadow-xl overflow-hidden ${colorClass}`}>
+    <div className={`flex items-center w-full flex-1 rounded-[24px] border px-8 transition-all duration-700 shadow-xl overflow-hidden ${colorClass}`}>
       <div className="w-[22%] flex flex-col justify-center py-1">
         <h2 className="text-3xl font-black tracking-tighter truncate leading-none uppercase italic">
-          {modelDisplay}
+          {modelOnly}
         </h2>
         <span className="text-[10px] font-bold opacity-60 mt-1 uppercase tracking-[0.3em]">{vehicle.plate}</span>
       </div>
@@ -67,9 +70,7 @@ const VehicleRow: React.FC<VehicleRowProps> = ({ vehicle }) => {
       </div>
 
       <div className="w-[14%] flex flex-col justify-center border-l border-current/10 pl-6 py-1">
-        <p className="text-xl font-bold uppercase truncate leading-none tracking-tight">
-          {formatMechanicName(vehicle.mechanic)}
-        </p>
+        <p className="text-xl font-bold uppercase truncate leading-none tracking-tight">{firstName}</p>
       </div>
     </div>
   );
